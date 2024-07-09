@@ -1,0 +1,119 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+description = "Cucumber Test Example"
+group 'com.epam'
+version '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    compileJava.options.encoding = 'UTF-8'
+}
+
+application {
+    mainClass = 'com.epam.gym.web.DemoApplication'
+}
+
+wrapper {
+    gradleVersion = '8.0'
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    configureEach {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    // spring
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter', version: '2.7.18'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.7.18'
+//    implementation 'org.springframework.boot:spring-boot-starter-validation:2.7.18'
+    implementation group: 'io.spring.gradle', name: 'dependency-management-plugin', version: '1.1.4'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: '2.7.18', ext: 'pom'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.18'
+    // lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    testCompileOnly 'org.projectlombok:lombok:1.18.30'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
+//    // apache
+//    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
+//    implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.5.0-M1'
+    // jackson
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.15.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-hibernate5', version: '2.15.2'
+    // log
+    implementation 'org.springframework.boot:spring-boot-starter-logging:2.7.18'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-log4j2', version: '2.7.18'
+    // tests - junit + mockito
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.platform:junit-platform-launcher:1.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
+    testImplementation 'org.mockito:mockito-core:4.11.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
+    // cucumber
+    implementation group: 'io.cucumber', name: 'cucumber-java', version: '7.15.0'
+    implementation group: 'io.cucumber', name: 'cucumber-spring', version: '7.15.0'
+    testImplementation group: 'io.cucumber', name: 'cucumber-junit', version: '7.15.0'
+    testImplementation group: 'io.cucumber', name: 'cucumber-junit-platform-engine', version: '7.15.0'
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-suite-api', version: '1.10.2'
+}
+
+sourceSets {
+    main {
+        runtimeClasspath = files(output.resourcesDir) + runtimeClasspath
+    }
+    test {
+        runtimeClasspath = files(output.resourcesDir) + runtimeClasspath
+    }
+}
+
+// ./gradlew cucumberCli
+// ./gradlew cucumber
+// gradle cucumber
+
+// ./gradlew cucumber @SmokeTest // todo
+// gradle cucumber -P tags=smoke
+
+task cucumberCli() {
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = [
+                    '--plugin', 'pretty',
+                    '--plugin', 'html:target/cucumber-reports/cucumber-reports.html',
+                    '--glue', 'com.epam.gym.bdd',
+//                    '--tags', '@SmokeTest', run only
+                    'src/test/resources/features']
+        }
+    }
+}
+
+build.dependsOn cucumberCli
